@@ -1,0 +1,118 @@
+-- 1. CLEANUP (Optional: Reset tables if they exist)
+DROP TABLE IF EXISTS requests;
+DROP TABLE IF EXISTS inventory;
+DROP TABLE IF EXISTS users;
+
+-- 2. CREATE USERS TABLE
+-- We use double quotes to preserve camelCase if specifically needed, 
+-- though standard SQL is case-insensitive. 
+-- These column names match your User interface in types.ts.
+CREATE TABLE users (
+    "id" TEXT PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "role" TEXT NOT NULL,
+    "base" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT
+);
+
+-- 3. CREATE INVENTORY TABLE
+-- Matches InventoryItem interface in types.ts
+CREATE TABLE inventory (
+    "id" TEXT PRIMARY KEY,
+    "no" TEXT,
+    "description" TEXT,
+    "maker" TEXT,
+    "range" TEXT,
+    "typeModel" TEXT,
+    "serialNo" TEXT,
+    "unitPrice" TEXT,
+    "date" TEXT,
+    "poNo" TEXT,
+    "quantity" INTEGER,
+    "assetNo" TEXT,
+    "location" TEXT,
+    "equipmentStatus" TEXT,
+    "status" TEXT,
+    "semsCategory" TEXT,
+    "physicalStatus" TEXT,
+    "remarks" TEXT,
+    "currentLocation" TEXT,
+    "personInCharge" TEXT,
+    "lastMovementDate" TEXT,
+    "base" TEXT NOT NULL
+);
+
+-- 4. CREATE REQUESTS TABLE
+-- Matches MovementRequest interface in types.ts
+CREATE TABLE requests (
+    "id" TEXT PRIMARY KEY,
+    "type" TEXT NOT NULL,
+    "staffId" TEXT NOT NULL,
+    "staffName" TEXT NOT NULL,
+    "storekeeperId" TEXT,
+    "managerId" TEXT,
+    "base" TEXT NOT NULL,
+    "items" JSONB NOT NULL, -- Stores the array of items involved
+    "status" TEXT NOT NULL,
+    "timestamp" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    "rejectionReason" TEXT,
+    "targetLocation" TEXT,
+    "targetDate" TEXT
+);
+
+-- 5. INSERT MOCK DATA (USERS)
+INSERT INTO users ("id", "name", "role", "base", "email") VALUES
+('u1', 'Alice Admin', 'ADMIN', 'HQ', 'alice@company.com'),
+('u2', 'Bob Staff', 'STAFF', 'Lemal', 'bob@company.com'),
+('u3', 'Charlie Storekeeper', 'STOREKEEPER', 'Lemal', 'charlie@company.com'),
+('u4', 'David Staff', 'STAFF', 'PD', 'david@company.com'),
+('u5', 'Eve Storekeeper', 'STOREKEEPER', 'PD', 'eve@company.com'),
+('u6', 'Frank Manager', 'BASE_MANAGER', 'Lemal', 'frank@company.com');
+
+-- 6. INSERT MOCK DATA (INVENTORY)
+INSERT INTO inventory (
+    "id", "no", "description", "maker", "range", "typeModel", "serialNo", 
+    "unitPrice", "date", "poNo", "quantity", "assetNo", "location", 
+    "equipmentStatus", "status", "semsCategory", "physicalStatus", "remarks", 
+    "currentLocation", "personInCharge", "lastMovementDate", "base"
+) VALUES
+('lml-001', '1', 'Impact Drill 18V LXT', 'Makita', '0-2000 RPM', 'DHP482Z', 'MK-882910', 
+ '450.00', '12/01/2023', 'PO-23-LML-01', 1, 'AST-LML-T01', 'Rack A-01', 
+ 'In Store', 'Working', 'Power Tools', 'Good', 'Battery checked ok', 
+ 'In Store', NULL, NULL, 'Lemal'),
+
+('lml-002', '2', 'Digital Multimeter', 'Fluke', '1000V', '179 True RMS', 'FL-992834', 
+ '1200.00', '15/02/2023', 'PO-23-LML-02', 1, 'AST-LML-I01', 'Cabinet C2', 
+ 'In Store', 'Working', 'Instruments', 'Good', 'Calibration due Dec 2024', 
+ 'In Store', NULL, NULL, 'Lemal'),
+
+('lml-003', '3', 'Safety Harness Full Body', '3M', '100kg', 'Protecta', '3M-SH-771', 
+ '350.00', '10/03/2023', 'PO-23-LML-03', 1, 'AST-LML-S01', 'Rack B-03', 
+ 'Borrowed by Bob Staff', 'Working', 'PPE', 'Good', 'Used for roof inspection', 
+ 'Project Site Alpha', 'Bob Staff', '2023-10-25', 'Lemal'),
+
+('lml-004', '4', 'Angle Grinder 4"', 'Bosch', '720W', 'GWS 7-100', 'BS-GR-112', 
+ '280.00', '05/04/2023', 'PO-23-LML-04', 1, 'AST-LML-T02', 'Rack A-02', 
+ 'In Store', 'Faulty', 'Power Tools', 'Switch Broken', 'Sent for repair 01/11', 
+ 'In Store', NULL, NULL, 'Lemal'),
+
+('lml-005', '5', 'Hydraulic Jack', 'Masada', '10 Ton', 'MH-10', 'MS-HJ-009', 
+ '650.00', '20/05/2023', 'PO-23-LML-05', 1, 'AST-LML-M01', 'Floor Area D', 
+ 'In Store', 'Working', 'Machinery', 'Scratched', 'Oil level checked', 
+ 'In Store', NULL, NULL, 'Lemal'),
+
+('lml-006', '6', 'Welding Set Inverter', 'Lincoln Electric', '200A', 'Invertec V205', 'LE-WS-554', 
+ '3500.00', '12/06/2023', 'PO-23-LML-06', 1, 'AST-LML-W01', 'Rack E-01', 
+ 'In Store', 'Working', 'Welding', 'Good', '', 
+ 'In Store', NULL, NULL, 'Lemal');
+
+-- 7. ENABLE ROW LEVEL SECURITY (Optional - for simple starting, you can leave off or enable true)
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
+ALTER TABLE requests ENABLE ROW LEVEL SECURITY;
+
+-- Create policies to allow all access (For development purposes only)
+CREATE POLICY "Allow all access to users" ON users FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access to inventory" ON inventory FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all access to requests" ON requests FOR ALL USING (true) WITH CHECK (true);

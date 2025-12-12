@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { InventoryItem, MovementRequest, User, RequestStatus, RequestType } from '../types';
+import { InventoryItem, MovementRequest, User, RequestStatus, RequestType, UserRole } from '../types';
 import { INITIAL_INVENTORY, MOCK_USERS } from '../constants';
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabaseClient';
@@ -293,14 +293,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const processRequest = async (requestId: string, approved: boolean) => {
     if (!user) return;
 
+    // Determine New Status based on Role and Request Type
+    const targetRequest = requests.find(r => r.id === requestId);
+    if (!targetRequest) return;
+
+    let newStatus = RequestStatus.REJECTED;
+
+    if (approved) {
+      if (user.role === UserRole.STOREKEEPER) {
+        // Storekeeper Logic
+        if (targetRequest.type === RequestType.BORROW) {
+          // Borrow requests go to Manager next
+          newStatus = RequestStatus.PENDING_MANAGER;
+        } else {
+          // Return requests are final
+          newStatus = RequestStatus.APPROVED;
+        }
+      } else if (user.role === UserRole.BASE_MANAGER) {
+        // Manager Logic
+        // Manager approval is final for Borrows
+        newStatus = RequestStatus.APPROVED;
+      } else {
+        // Fallback for Admin
+        newStatus = RequestStatus.APPROVED;
+      }
+    } else {
+      newStatus = RequestStatus.REJECTED;
+    }
+
+    const updates: any = {
+      status: newStatus,
+    };
+    
+    if (user.role === UserRole.STOREKEEPER) updates.storekeeperId = user.id;
+    if (user.role === UserRole.BASE_MANAGER) updates.managerId = user.id;
+
     // Optimistic Update for Request Status
     setRequests(prev => prev.map(req => {
       if (req.id === requestId) {
-        return {
-          ...req,
-          status: approved ? RequestStatus.APPROVED : RequestStatus.REJECTED,
-          storekeeperId: user.id,
-        };
+        return { ...req, ...updates };
       }
       return req;
     }));
@@ -309,46 +340,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // 1. Update Request Status in DB
       const { error: reqError } = await supabase
         .from('requests')
-        .update({ 
-          status: approved ? RequestStatus.APPROVED : RequestStatus.REJECTED,
-          storekeeperId: user.id 
-        })
+        .update(updates)
         .eq('id', requestId);
 
       if (reqError) throw reqError;
 
-      // 2. If Approved, Update Inventory Items in DB
-      if (approved) {
-        const targetRequest = requests.find(r => r.id === requestId);
-        if (targetRequest) {
+      // 2. ONLY if Status is fully APPROVED, Update Inventory Items in DB
+      if (newStatus === RequestStatus.APPROVED) {
           const itemIdsToUpdate = targetRequest.items.map(i => i.itemId);
 
           // Update Local Inventory State
           setInventory(prev => prev.map(item => {
              if (itemIdsToUpdate.includes(item.id)) {
-                let updates = {};
+                let itemUpdates = {};
                 if (targetRequest.type === RequestType.BORROW) {
-                   updates = {
+                   itemUpdates = {
                       equipmentStatus: `Borrowed by ${targetRequest.staffName}`,
                       personInCharge: targetRequest.staffName,
                       currentLocation: targetRequest.targetLocation || 'Unknown Site',
                       lastMovementDate: targetRequest.targetDate || new Date().toLocaleDateString()
                    };
                 } else {
-                   updates = {
+                   itemUpdates = {
                       equipmentStatus: 'In Store',
                       personInCharge: null,
                       currentLocation: item.location, // Back to storage location
                       lastMovementDate: new Date().toLocaleDateString()
                    };
                 }
-                return { ...item, ...updates };
+                return { ...item, ...itemUpdates };
              }
              return item;
           }));
 
           // DB Updates
-          const updates = itemIdsToUpdate.map(async (itemId) => {
+          const dbUpdates = itemIdsToUpdate.map(async (itemId) => {
              const item = inventory.find(i => i.id === itemId);
              if (!item) return;
 
@@ -374,8 +400,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                await supabase.from('inventory').update(updatePayload).eq('id', itemId);
              }
           });
-          await Promise.all(updates);
-        }
+          await Promise.all(dbUpdates);
       }
 
     } catch (error: any) {

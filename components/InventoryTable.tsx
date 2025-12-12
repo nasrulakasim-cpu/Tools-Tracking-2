@@ -67,7 +67,10 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
   // Calculate unique options from the full item list
   const uniqueOptions = useMemo(() => {
     const opts = new Set(items.map(i => getValue(i, colKey as keyof InventoryItem)));
-    return Array.from(opts).sort();
+    // Use localeCompare with numeric: true for natural sorting (1, 2, 10 instead of 1, 10, 2)
+    return Array.from(opts).sort((a: string, b: string) => {
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    });
   }, [items, colKey]);
 
   // Filter options based on search term in dropdown
@@ -150,26 +153,32 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
   const areAllVisibleSelected = visibleOptions.length > 0 && visibleOptions.every(opt => tempSelected.has(opt));
   const isIndeterminate = !areAllVisibleSelected && visibleOptions.some(opt => tempSelected.has(opt));
 
+  // Determine alignment: Left for first few columns, Right for others
+  const isLeftAligned = colKey === 'no' || colKey === 'description';
+
   return (
     <th className={`px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-300 ${width} relative group select-none`}>
       <div className={`flex items-center justify-between cursor-pointer hover:text-white ${isFiltered ? 'text-blue-400' : ''}`}
            onClick={() => setOpenCol(isOpen ? null : colKey)}>
         <span className={align === 'center' ? 'mx-auto' : ''}>{label}</span>
-        <div className={`p-1 rounded hover:bg-gray-700 ml-2 transition-colors ${isFiltered ? 'bg-gray-700 text-blue-400' : 'text-gray-500'}`}>
+        <div className={`p-1 rounded hover:bg-white/10 ml-2 transition-colors ${isFiltered ? 'bg-white/10 text-tnbRed' : 'text-gray-500'}`}>
           {isFiltered ? <Filter className="w-3 h-3 fill-current" /> : <ChevronDown className="w-3 h-3" />}
         </div>
       </div>
 
       {/* Dropdown */}
       {isOpen && (
-        <div ref={dropdownRef} className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 text-gray-800 font-normal normal-case animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+        <div 
+          ref={dropdownRef} 
+          className={`absolute top-full mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50 text-gray-800 font-normal normal-case animate-in fade-in zoom-in-95 duration-100 ${isLeftAligned ? 'left-0 origin-top-left' : 'right-0 origin-top-right'}`}
+        >
           <div className="p-3 border-b border-gray-100 space-y-2">
             <div className="relative">
               <Search className="w-4 h-4 text-gray-400 absolute left-2 top-2.5" />
               <input 
                 type="text" 
                 placeholder="Search (Enter to select)" 
-                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-tnbBlue focus:border-transparent"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
@@ -180,7 +189,7 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
                <label className="flex items-center space-x-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded flex-1">
                 <input 
                   type="checkbox" 
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-tnbBlue focus:ring-tnbBlue"
                   checked={areAllVisibleSelected}
                   ref={input => {
                     if (input) input.indeterminate = isIndeterminate;
@@ -191,7 +200,7 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
               </label>
               <button 
                 onClick={() => setTempSelected(new Set())}
-                className="text-xs text-gray-400 hover:text-red-600 hover:underline px-2"
+                className="text-xs text-gray-400 hover:text-tnbRed hover:underline px-2"
                 title="Uncheck all items"
               >
                 Clear All
@@ -207,7 +216,7 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
                 <label key={opt} className="flex items-center space-x-2 px-2 py-1.5 hover:bg-blue-50 rounded cursor-pointer text-sm">
                   <input 
                     type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-tnbBlue focus:ring-tnbBlue"
                     checked={tempSelected.has(opt)}
                     onChange={() => toggleOption(opt)}
                   />
@@ -226,7 +235,7 @@ const FilterHeader: React.FC<FilterHeaderProps> = ({
              </button>
              <button 
                onClick={handleApply}
-               className="text-xs bg-blue-600 text-white font-medium px-4 py-1.5 rounded shadow-sm hover:bg-blue-700 transition-colors"
+               className="text-xs bg-tnbBlue text-white font-medium px-4 py-1.5 rounded shadow-sm hover:bg-blue-900 transition-colors"
              >
                Apply
              </button>
@@ -273,7 +282,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
 
   // --- Selection Logic ---
   const isSelectable = (item: InventoryItem) => {
-    if (userRole !== UserRole.STAFF) return false;
+    if (userRole !== UserRole.STAFF && userRole !== UserRole.BASE_MANAGER) return false;
     
     // Borrow Mode: Can only borrow items that are 'In Store' and not scrapped
     if (selectionMode === 'borrow') {
@@ -366,17 +375,17 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
 
       <div className="overflow-x-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-32">
         <table className="min-w-full divide-y divide-gray-200 relative">
-          <thead className="bg-gray-800 text-white sticky top-0 z-30 shadow-md">
+          <thead className="bg-tnbBlue text-white sticky top-0 z-30 shadow-md">
             <tr>
               {selectionMode !== 'none' && (
-                <th className="px-3 py-3 text-left w-10 sticky left-0 bg-gray-800 z-40 border-r border-gray-700">
+                <th className="px-3 py-3 text-left w-10 sticky left-0 bg-tnbBlue z-40 border-r border-white/20">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
                     ref={input => { if (input) input.indeterminate = isIndeterminate; }}
                     onChange={handleSelectAll}
                     disabled={selectableItems.length === 0}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-white/30 rounded cursor-pointer disabled:opacity-50"
+                    className="h-4 w-4 text-tnbBlue focus:ring-tnbBlue border-white/30 rounded cursor-pointer disabled:opacity-50"
                   />
                 </th>
               )}
@@ -398,7 +407,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
               ))}
               
               {userRole === UserRole.STOREKEEPER && (
-                <th className="px-4 py-3 text-right sticky right-0 bg-gray-800 z-30 w-16">Edit</th>
+                <th className="px-4 py-3 text-right sticky right-0 bg-tnbBlue z-30 w-16">Edit</th>
               )}
             </tr>
           </thead>
@@ -423,7 +432,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                          disabled={!selectable}
                          checked={isSelected}
                          onChange={() => handleCheckboxChange(item.id)}
-                         className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded ${!selectable ? 'cursor-not-allowed bg-gray-100 text-gray-300' : 'cursor-pointer'}`}
+                         className={`h-4 w-4 text-tnbBlue focus:ring-tnbBlue border-gray-300 rounded ${!selectable ? 'cursor-not-allowed bg-gray-100 text-gray-300' : 'cursor-pointer'}`}
                        />
                     </td>
                   )}
@@ -434,7 +443,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                   <td className="px-4 py-3 text-sm font-semibold text-gray-800">{item.description}</td>
                   
                   {/* NEW COLUMNS */}
-                  <td className="px-4 py-3 text-sm text-blue-600 font-medium">
+                  <td className="px-4 py-3 text-sm text-tnbBlue font-medium">
                     {item.currentLocation}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
@@ -481,7 +490,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                   
                   {userRole === UserRole.STOREKEEPER && (
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium sticky right-0 z-20 bg-white group-hover:bg-blue-50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                      <button onClick={() => handleEditClick(item)} className="p-1 text-gray-400 hover:text-blue-600 transition-colors">
+                      <button onClick={() => handleEditClick(item)} className="p-1 text-gray-400 hover:text-tnbBlue transition-colors">
                         <Edit2 className="w-4 h-4" />
                       </button>
                     </td>
@@ -497,7 +506,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
       {editingItem && (
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-0 overflow-hidden">
-            <div className="bg-gray-800 px-6 py-4 flex justify-between items-center">
+            <div className="bg-tnbBlue px-6 py-4 flex justify-between items-center">
               <h3 className="text-lg font-bold text-white flex items-center">
                 <Edit2 className="w-4 h-4 mr-2" />
                 Edit Item: {editingItem.serialNo}
@@ -524,7 +533,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                          type={col.key === 'quantity' ? 'number' : 'text'}
                          value={getValue(editingItem, col.key as keyof InventoryItem)}
                          onChange={(e) => setEditingItem({ ...editingItem, [col.key]: e.target.value })}
-                         className="block w-full border border-gray-300 rounded-lg shadow-sm p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                         className="block w-full border border-gray-300 rounded-lg shadow-sm p-2.5 text-sm focus:ring-2 focus:ring-tnbBlue focus:outline-none"
                        />
                      )}
                   </div>
@@ -534,7 +543,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
 
             <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3 border-t">
               <button onClick={() => setEditingItem(null)} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-100">Cancel</button>
-              <button onClick={handleSaveEdit} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 shadow-sm">Save Changes</button>
+              <button onClick={handleSaveEdit} className="px-4 py-2 bg-tnbBlue text-white rounded-lg text-sm hover:bg-blue-900 shadow-sm">Save Changes</button>
             </div>
           </div>
         </div>

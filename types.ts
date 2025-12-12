@@ -2,6 +2,7 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   STAFF = 'STAFF',
   STOREKEEPER = 'STOREKEEPER',
+  BASE_MANAGER = 'BASE_MANAGER',
 }
 
 export enum ItemStatus {
@@ -11,8 +12,9 @@ export enum ItemStatus {
 }
 
 export enum RequestStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
+  PENDING = 'PENDING', // Waiting for Storekeeper
+  PENDING_MANAGER = 'PENDING_MANAGER', // Storekeeper Approved, Waiting for Manager
+  APPROVED = 'APPROVED', // Fully Approved (Item released)
   REJECTED = 'REJECTED',
 }
 
@@ -70,6 +72,7 @@ export interface MovementRequest {
   staffId: string;
   staffName: string;
   storekeeperId?: string;
+  managerId?: string; // Track who gave final approval
   base: string;
   items: RequestItem[];
   status: RequestStatus;

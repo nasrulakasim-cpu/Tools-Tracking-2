@@ -15,6 +15,7 @@ export const MOCK_USERS: User[] = [
   { id: 'u3', name: 'Charlie Storekeeper', role: UserRole.STOREKEEPER, base: 'Lemal', email: 'charlie@company.com' },
   { id: 'u4', name: 'David Staff', role: UserRole.STAFF, base: 'PD', email: 'david@company.com' },
   { id: 'u5', name: 'Eve Storekeeper', role: UserRole.STOREKEEPER, base: 'PD', email: 'eve@company.com' },
+  { id: 'u6', name: 'Frank Manager', role: UserRole.BASE_MANAGER, base: 'Lemal', email: 'frank@company.com' },
 ];
 
 export const INITIAL_INVENTORY: InventoryItem[] = [
