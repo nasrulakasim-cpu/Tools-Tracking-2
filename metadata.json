@@ -1,0 +1,5 @@
+{
+  "name": "InventoryQ - Equipment Management System",
+  "description": "A comprehensive inventory management system with role-based access (Admin, Staff, Storekeeper), workflow verification, and automated QF21 PDF generation.",
+  "requestFramePermissions": []
+}
