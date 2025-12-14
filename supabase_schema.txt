@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     "id" TEXT PRIMARY KEY,
     "name" TEXT NOT NULL,
+    "username" TEXT NOT NULL, -- Added username
     "role" TEXT NOT NULL,
     "base" TEXT NOT NULL,
     "email" TEXT NOT NULL,
@@ -62,13 +63,13 @@ CREATE TABLE requests (
 );
 
 -- 5. INSERT MOCK DATA (USERS)
-INSERT INTO users ("id", "name", "role", "base", "email") VALUES
-('u1', 'Alice Admin', 'ADMIN', 'HQ', 'alice@company.com'),
-('u2', 'Bob Staff', 'STAFF', 'Lemal', 'bob@company.com'),
-('u3', 'Charlie Storekeeper', 'STOREKEEPER', 'Lemal', 'charlie@company.com'),
-('u4', 'David Staff', 'STAFF', 'PD', 'david@company.com'),
-('u5', 'Eve Storekeeper', 'STOREKEEPER', 'PD', 'eve@company.com'),
-('u6', 'Frank Manager', 'BASE_MANAGER', 'Lemal', 'frank@company.com');
+INSERT INTO users ("id", "name", "username", "role", "base", "email", "password") VALUES
+('u1', 'Alice Admin', 'admin', 'ADMIN', 'HQ', 'alice@company.com', '12345'),
+('u2', 'Bob Staff', 'staff', 'STAFF', 'Lemal', 'bob@company.com', '12345'),
+('u3', 'Charlie Storekeeper', 'storekeeper', 'STOREKEEPER', 'Lemal', 'charlie@company.com', '12345'),
+('u4', 'David Staff', 'david', 'STAFF', 'PD', 'david@company.com', '12345'),
+('u5', 'Eve Storekeeper', 'eve', 'STOREKEEPER', 'PD', 'eve@company.com', '12345'),
+('u6', 'Frank Manager', 'manager', 'BASE_MANAGER', 'Lemal', 'frank@company.com', '12345');
 
 -- 6. INSERT MOCK DATA (INVENTORY)
 INSERT INTO inventory (

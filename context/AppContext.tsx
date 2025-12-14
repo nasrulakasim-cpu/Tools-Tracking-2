@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabaseClient';
 interface AppContextType {
   user: User | null;
   users: User[];
-  login: (userId: string) => void;
+  login: (username: string, password: string) => boolean;
   logout: () => void;
   addUser: (newUser: User) => Promise<void>;
   inventory: InventoryItem[];
@@ -88,9 +88,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     fetchData();
   }, []);
 
-  const login = (userId: string) => {
-    const foundUser = users.find(u => u.id === userId);
-    if (foundUser) setUser(foundUser);
+  const login = (username: string, password: string): boolean => {
+    // Simple verification against loaded users
+    // In a real app, this would perform a server-side auth request
+    const foundUser = users.find(u => u.username === username && u.password === password);
+    if (foundUser) {
+      setUser(foundUser);
+      return true;
+    }
+    return false;
   };
 
   const logout = () => setUser(null);

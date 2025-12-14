@@ -4,12 +4,23 @@ import { Layout, RemacoLogo } from './components/Layout';
 import { InventoryTable } from './components/InventoryTable';
 import { UserRole, RequestStatus, RequestType, MovementRequest, InventoryItem, ItemStatus, User } from './types';
 import { generateQF21 } from './services/pdfService';
-import { Check, X, FileText, Package, Clock, ArrowRightLeft, AlertCircle, Download, Zap, ChevronRight, LogIn, Upload, Plus, UserPlus, Users, Filter, Calendar, MapPin, Briefcase } from 'lucide-react';
+import { Check, X, FileText, Package, Clock, ArrowRightLeft, AlertCircle, Download, Zap, ChevronRight, LogIn, Upload, Plus, UserPlus, Users, Filter, Calendar, MapPin, Briefcase, Lock, User as UserIcon } from 'lucide-react';
 import { SYSTEM_BASES } from './constants';
 
 // --- Login Screen ---
 const LoginScreen = () => {
-  const { login, users } = useApp();
+  const { login } = useApp();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = login(username, password);
+    if (!success) {
+      setError('Invalid username or password');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-6">
@@ -37,43 +48,80 @@ const LoginScreen = () => {
         </div>
 
         {/* Right Side: Login Form */}
-        <div className="w-full md:w-1/2 p-10 flex flex-col justify-center bg-white">
+        <div className="w-full md:w-1/2 p-10 flex flex-col justify-center bg-white relative">
           <div className="mb-8 text-center md:text-left">
             <h2 className="text-2xl font-bold text-gray-800">Sign In</h2>
-            <p className="text-gray-500 mt-2">Select your user profile to continue.</p>
+            <p className="text-gray-500 mt-2">Enter your credentials to access the system.</p>
           </div>
           
-          <div className="space-y-3 overflow-y-auto pr-2 max-h-[350px] scrollbar-thin scrollbar-thumb-gray-200">
-            {users.map(u => (
-              <button
-                key={u.id}
-                onClick={() => login(u.id)}
-                className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-tnbBlue hover:bg-blue-50/50 transition-all duration-200 group bg-white shadow-sm hover:shadow-md"
-              >
-                <div className="flex items-center space-x-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm ${
-                    u.role === UserRole.ADMIN ? 'bg-purple-600' : 
-                    u.role === UserRole.BASE_MANAGER ? 'bg-teal-600' :
-                    u.role === UserRole.STOREKEEPER ? 'bg-orange-500' : 'bg-tnbBlue'
-                  }`}>
-                    {u.name.charAt(0)}
-                  </div>
-                  <div className="text-left">
-                    <p className="font-bold text-gray-800 group-hover:text-tnbBlue transition-colors">{u.name}</p>
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{u.role} &bull; {u.base}</p>
-                  </div>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <UserIcon className="h-5 w-5 text-gray-400" />
                 </div>
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-tnbBlue" />
-                </div>
-              </button>
-            ))}
-          </div>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-tnbBlue focus:border-tnbBlue transition-colors"
+                  placeholder="Enter username"
+                />
+              </div>
+            </div>
 
-          <div className="mt-8 text-center border-t border-gray-100 pt-6">
-            <p className="text-xs text-gray-400">
-              By accessing this system, you agree to the TNB IT Security Policy.
-            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-tnbBlue focus:border-tnbBlue transition-colors"
+                  placeholder="Enter password"
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg flex items-center">
+                <AlertCircle className="w-4 h-4 mr-2" />
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-tnbBlue hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tnbBlue transition-all transform hover:-translate-y-0.5"
+            >
+              Sign In
+            </button>
+          </form>
+          
+          <div className="mt-8 pt-6 border-t border-gray-100">
+             <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <p className="text-xs font-bold text-blue-800 mb-2 uppercase tracking-wide">Demo Credentials:</p>
+                <div className="grid grid-cols-2 gap-2 text-xs text-blue-700 font-mono">
+                   <div>
+                      <span className="font-semibold">admin</span> / 12345
+                   </div>
+                   <div>
+                      <span className="font-semibold">staff</span> / 12345
+                   </div>
+                   <div>
+                      <span className="font-semibold">storekeeper</span> / 12345
+                   </div>
+                   <div>
+                      <span className="font-semibold">manager</span> / 12345
+                   </div>
+                </div>
+             </div>
           </div>
         </div>
       </div>
@@ -275,7 +323,7 @@ const Dashboard = () => {
            </>
         )}
 
-        {(user.role === UserRole.STAFF || user.role === UserRole.BASE_MANAGER) && user.role !== UserRole.STOREKEEPER && (
+        {(user.role === UserRole.STAFF || user.role === UserRole.BASE_MANAGER) && (
           <>
             <StatCard 
               title="My Pending" 
@@ -321,23 +369,25 @@ const UserManagementPage = () => {
     role: UserRole.STAFF,
     base: SYSTEM_BASES[0],
     name: '',
+    username: '',
     email: '',
     password: ''
   });
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newUser.name && newUser.email && newUser.base && newUser.password) {
+    if (newUser.name && newUser.email && newUser.base && newUser.password && newUser.username) {
       const createdUser: User = {
         id: `u-${Date.now()}`,
         name: newUser.name,
+        username: newUser.username,
         email: newUser.email,
         role: newUser.role as UserRole,
         base: newUser.base,
         password: newUser.password
       };
       addUser(createdUser);
-      setNewUser({ role: UserRole.STAFF, base: SYSTEM_BASES[0], name: '', email: '', password: '' });
+      setNewUser({ role: UserRole.STAFF, base: SYSTEM_BASES[0], name: '', username: '', email: '', password: '' });
       alert('User created successfully!');
     }
   };
@@ -363,6 +413,17 @@ const UserManagementPage = () => {
               placeholder="e.g. John Doe"
               value={newUser.name}
               onChange={e => setNewUser({...newUser, name: e.target.value})}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username (Login ID)</label>
+            <input 
+              required
+              type="text" 
+              className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-tnbBlue focus:outline-none"
+              placeholder="e.g. johnd"
+              value={newUser.username}
+              onChange={e => setNewUser({...newUser, username: e.target.value})}
             />
           </div>
           <div>
@@ -402,7 +463,7 @@ const UserManagementPage = () => {
               <option value="HQ">HQ</option>
             </select>
           </div>
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Set Password</label>
             <input 
               required
@@ -426,34 +487,38 @@ const UserManagementPage = () => {
           <Users className="w-5 h-5 text-gray-500" />
           <h3 className="font-bold text-gray-700">Existing Users</h3>
         </div>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Role</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Base</th>
-              <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Email</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{u.name}</td>
-                <td className="px-6 py-4 text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                    u.role === UserRole.ADMIN ? 'bg-purple-100 text-purple-800' :
-                    u.role === UserRole.BASE_MANAGER ? 'bg-teal-100 text-teal-800' :
-                    u.role === UserRole.STOREKEEPER ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
-                  }`}>
-                    {u.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{u.base}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{u.email}</td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Username</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Base</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Email</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {users.map((u) => (
+                <tr key={u.id}>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{u.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 font-mono">{u.username || '-'}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                      u.role === UserRole.ADMIN ? 'bg-purple-100 text-purple-800' :
+                      u.role === UserRole.BASE_MANAGER ? 'bg-teal-100 text-teal-800' :
+                      u.role === UserRole.STOREKEEPER ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {u.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{u.base}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{u.email}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

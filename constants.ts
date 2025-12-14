@@ -10,12 +10,12 @@ export const SYSTEM_BASES = [
 ];
 
 export const MOCK_USERS: User[] = [
-  { id: 'u1', name: 'Alice Admin', role: UserRole.ADMIN, base: 'HQ', email: 'alice@company.com' },
-  { id: 'u2', name: 'Bob Staff', role: UserRole.STAFF, base: 'Lemal', email: 'bob@company.com' },
-  { id: 'u3', name: 'Charlie Storekeeper', role: UserRole.STOREKEEPER, base: 'Lemal', email: 'charlie@company.com' },
-  { id: 'u4', name: 'David Staff', role: UserRole.STAFF, base: 'PD', email: 'david@company.com' },
-  { id: 'u5', name: 'Eve Storekeeper', role: UserRole.STOREKEEPER, base: 'PD', email: 'eve@company.com' },
-  { id: 'u6', name: 'Frank Manager', role: UserRole.BASE_MANAGER, base: 'Lemal', email: 'frank@company.com' },
+  { id: 'u1', name: 'Alice Admin', username: 'admin', role: UserRole.ADMIN, base: 'HQ', email: 'alice@company.com', password: '12345' },
+  { id: 'u2', name: 'Bob Staff', username: 'staff', role: UserRole.STAFF, base: 'Lemal', email: 'bob@company.com', password: '12345' },
+  { id: 'u3', name: 'Charlie Storekeeper', username: 'storekeeper', role: UserRole.STOREKEEPER, base: 'Lemal', email: 'charlie@company.com', password: '12345' },
+  { id: 'u4', name: 'David Staff', username: 'david', role: UserRole.STAFF, base: 'PD', email: 'david@company.com', password: '12345' },
+  { id: 'u5', name: 'Eve Storekeeper', username: 'eve', role: UserRole.STOREKEEPER, base: 'PD', email: 'eve@company.com', password: '12345' },
+  { id: 'u6', name: 'Frank Manager', username: 'manager', role: UserRole.BASE_MANAGER, base: 'Lemal', email: 'frank@company.com', password: '12345' },
 ];
 
 export const INITIAL_INVENTORY: InventoryItem[] = [

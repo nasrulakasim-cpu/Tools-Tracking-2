@@ -26,6 +26,7 @@ export enum RequestType {
 export interface User {
   id: string;
   name: string;
+  username: string; // New field for login
   role: UserRole;
   base: string; // e.g., "Lemal", "Base 2"
   email: string;
