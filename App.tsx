@@ -4,7 +4,7 @@ import { Layout, RemacoLogo } from './components/Layout';
 import { InventoryTable } from './components/InventoryTable';
 import { UserRole, RequestStatus, RequestType, MovementRequest, InventoryItem, ItemStatus, User } from './types';
 import { generateQF21 } from './services/pdfService';
-import { Check, X, FileText, Package, Clock, ArrowRightLeft, AlertCircle, Download, Zap, ChevronRight, LogIn, Upload, Plus, UserPlus, Users, Filter, Calendar, MapPin, Briefcase, Lock, User as UserIcon } from 'lucide-react';
+import { Check, X, FileText, Package, Clock, ArrowRightLeft, AlertCircle, Download, Zap, ChevronRight, LogIn, Upload, Plus, UserPlus, Users, Filter, Calendar, MapPin, Briefcase, Lock, User as UserIcon, BarChart3, PieChart, TrendingUp, AlertTriangle, Trash2 } from 'lucide-react';
 import { SYSTEM_BASES } from './constants';
 
 // --- Login Screen ---
@@ -233,6 +233,42 @@ const RequestModal: React.FC<RequestModalProps> = ({ isOpen, onClose, onSubmit, 
 const Dashboard = () => {
   const { user, requests, inventory } = useApp();
   
+  // Calculate Stats
+  const adminStats = useMemo(() => {
+    if (user?.role !== UserRole.ADMIN) return null;
+
+    let totalQty = 0;
+    let inUse = 0;
+    let scrapped = 0;
+    let lost = 0;
+    let faulty = 0;
+    let working = 0;
+
+    inventory.forEach(item => {
+        totalQty += (item.quantity || 1);
+        
+        const s = item.status.toLowerCase();
+        if (s.includes('scrap') || s.includes('lupus')) scrapped++;
+        else if (s.includes('lost') || s.includes('hilang')) lost++;
+        else if (s.includes('fault') || s.includes('rosak')) faulty++;
+        else working++; // Default bucket
+
+        if (item.equipmentStatus !== 'In Store') {
+            inUse++;
+        }
+    });
+
+    return {
+        totalQty,
+        inUse,
+        available: totalQty - inUse,
+        scrapped,
+        lost,
+        faulty,
+        working
+    };
+  }, [inventory, user?.role]);
+
   if (!user) return null;
 
   const myPendingRequests = requests.filter(r => r.staffId === user.id && (r.status === RequestStatus.PENDING || r.status === RequestStatus.PENDING_MANAGER));
@@ -344,18 +380,163 @@ const Dashboard = () => {
           </>
         )}
         
-        {user.role === UserRole.ADMIN && (
-          <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-6 rounded-xl shadow-lg col-span-3 text-white border-l-4 border-tnbRed">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-white/10 rounded-full animate-pulse">
-                <Zap className="w-8 h-8 text-yellow-400" />
+        {user.role === UserRole.ADMIN && adminStats && (
+          <>
+            {/* Row 1: High Level Stats */}
+            <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4">
+               <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                     <div>
+                       <p className="text-gray-500 text-xs font-bold uppercase">Total Items</p>
+                       <h3 className="text-3xl font-black text-gray-800 mt-1">{adminStats.totalQty}</h3>
+                     </div>
+                     <div className="p-2 bg-blue-50 text-tnbBlue rounded-lg">
+                       <Package className="w-5 h-5" />
+                     </div>
+                  </div>
+                  <div className="mt-4 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                     <div className="h-full bg-tnbBlue w-full" />
+                  </div>
+               </div>
+
+               <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                     <div>
+                       <p className="text-gray-500 text-xs font-bold uppercase">In Use / Borrowed</p>
+                       <h3 className="text-3xl font-black text-gray-800 mt-1">{adminStats.inUse}</h3>
+                     </div>
+                     <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+                       <TrendingUp className="w-5 h-5" />
+                     </div>
+                  </div>
+                  <div className="mt-4">
+                     <div className="flex justify-between text-xs text-gray-400 mb-1">
+                       <span>Utilization</span>
+                       <span>{Math.round((adminStats.inUse / adminStats.totalQty) * 100)}%</span>
+                     </div>
+                     <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-purple-500" style={{ width: `${(adminStats.inUse / adminStats.totalQty) * 100}%` }} />
+                     </div>
+                  </div>
+               </div>
+
+               <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                     <div>
+                       <p className="text-gray-500 text-xs font-bold uppercase">Available</p>
+                       <h3 className="text-3xl font-black text-gray-800 mt-1">{adminStats.available}</h3>
+                     </div>
+                     <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                       <Check className="w-5 h-5" />
+                     </div>
+                  </div>
+                  <div className="mt-4 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                     <div className="h-full bg-green-500" style={{ width: `${(adminStats.available / adminStats.totalQty) * 100}%` }} />
+                  </div>
+               </div>
+
+               <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                     <div>
+                       <p className="text-gray-500 text-xs font-bold uppercase">Lost Items</p>
+                       <h3 className="text-3xl font-black text-red-600 mt-1">{adminStats.lost}</h3>
+                     </div>
+                     <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                       <AlertTriangle className="w-5 h-5" />
+                     </div>
+                  </div>
+                  <div className="mt-4 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                     <div className="h-full bg-red-500" style={{ width: `${(adminStats.lost / adminStats.totalQty) * 100}%` }} />
+                  </div>
+               </div>
+            </div>
+
+            {/* Row 2: Detailed Infographic / Health Status */}
+            <div className="col-span-1 md:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                <div>
+                   <h3 className="font-bold text-gray-800 flex items-center">
+                     <BarChart3 className="w-5 h-5 mr-2 text-tnbBlue" />
+                     Inventory Health Analytics
+                   </h3>
+                   <p className="text-xs text-gray-500 mt-1">Breakdown of asset condition and status</p>
+                </div>
+                <div className="text-right">
+                   <p className="text-xs font-bold text-gray-400 uppercase">System Health</p>
+                   <p className="text-xl font-bold text-green-600">
+                     {Math.round((adminStats.working / adminStats.totalQty) * 100)}%
+                     <span className="text-xs text-gray-400 font-normal ml-1">Operational</span>
+                   </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-xl font-bold">System Status: Operational</h3>
-                <p className="text-gray-300 mt-1 text-sm">{requests.length} total transactions logged. {inventory.length} items in database.</p>
+              
+              <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-12">
+                 {/* Left: Graphic Bars */}
+                 <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between text-sm font-medium mb-2">
+                        <span className="flex items-center text-gray-700"><Check className="w-4 h-4 mr-2 text-green-500" /> Working Condition</span>
+                        <span className="text-gray-900">{adminStats.working} items</span>
+                      </div>
+                      <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${(adminStats.working / adminStats.totalQty) * 100}%` }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm font-medium mb-2">
+                        <span className="flex items-center text-gray-700"><AlertTriangle className="w-4 h-4 mr-2 text-yellow-500" /> Faulty / Repair</span>
+                        <span className="text-gray-900">{adminStats.faulty} items</span>
+                      </div>
+                      <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${(adminStats.faulty / adminStats.totalQty) * 100}%` }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm font-medium mb-2">
+                        <span className="flex items-center text-gray-700"><Trash2 className="w-4 h-4 mr-2 text-gray-500" /> Scrapped / Disposed</span>
+                        <span className="text-gray-900">{adminStats.scrapped} items</span>
+                      </div>
+                      <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gray-500 rounded-full" style={{ width: `${(adminStats.scrapped / adminStats.totalQty) * 100}%` }} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-sm font-medium mb-2">
+                        <span className="flex items-center text-gray-700"><X className="w-4 h-4 mr-2 text-red-500" /> Lost / Missing</span>
+                        <span className="text-gray-900">{adminStats.lost} items</span>
+                      </div>
+                      <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-red-500 rounded-full" style={{ width: `${(adminStats.lost / adminStats.totalQty) * 100}%` }} />
+                      </div>
+                    </div>
+                 </div>
+
+                 {/* Right: Summary Box */}
+                 <div className="bg-gray-50 rounded-xl p-6 flex flex-col justify-center items-center text-center border border-gray-100">
+                    <PieChart className="w-16 h-16 text-tnbBlue mb-4 opacity-20" />
+                    <h4 className="text-lg font-bold text-gray-800">Data Summary</h4>
+                    <p className="text-sm text-gray-500 mt-2 max-w-xs">
+                      Out of <span className="font-bold text-gray-900">{adminStats.totalQty}</span> total registered assets, 
+                      <span className="font-bold text-green-600"> {adminStats.working}</span> are in good condition. 
+                      Currently <span className="font-bold text-purple-600">{adminStats.inUse}</span> items are deployed to sites.
+                    </p>
+                    <div className="mt-6 grid grid-cols-2 gap-4 w-full">
+                       <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                          <p className="text-xs text-gray-400 uppercase font-bold">Scrap Rate</p>
+                          <p className="text-lg font-bold text-gray-700">{((adminStats.scrapped / adminStats.totalQty) * 100).toFixed(1)}%</p>
+                       </div>
+                       <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                          <p className="text-xs text-gray-400 uppercase font-bold">Loss Rate</p>
+                          <p className="text-lg font-bold text-red-600">{((adminStats.lost / adminStats.totalQty) * 100).toFixed(1)}%</p>
+                       </div>
+                    </div>
+                 </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
